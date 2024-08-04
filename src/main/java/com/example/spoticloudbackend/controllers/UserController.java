@@ -22,6 +22,16 @@ public class UserController {
         this.playlistService = playlistService;
     }
 
+    @PostMapping("/login")
+    public String login(@RequestBody UserLogin user){
+        return userService.login(user);
+    }
+
+    @GetMapping("/login")
+    public String login(String token){
+        return userService.validateToken(token);
+    }
+
     @GetMapping
     public List<UserDto> getUsers(){
         return userService.getUsers();

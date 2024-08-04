@@ -9,10 +9,8 @@ import com.example.spoticloudbackend.exceptions.TrackNotFoundException;
 import com.example.spoticloudbackend.exceptions.UserNotFoundException;
 import com.example.spoticloudbackend.repositories.TrackRepository;
 import com.example.spoticloudbackend.repositories.UserRepository;
-import com.example.spoticloudbackend.schemas.HistoryRecordDto;
-import com.example.spoticloudbackend.schemas.TrackDto;
-import com.example.spoticloudbackend.schemas.UserCreateDto;
-import com.example.spoticloudbackend.schemas.UserDto;
+import com.example.spoticloudbackend.schemas.*;
+import com.example.spoticloudbackend.security.JwtService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,19 +24,31 @@ public class UserService {
     private final UserRepository userRepository;
     private final TrackRepository trackRepository;
     private final RecommendationService recommendationService;
+    private final JwtService jwtService;
 
     @Autowired
-    public UserService(UserRepository userRepository, TrackRepository trackRepository, RecommendationService recommendationService) {
+    public UserService(UserRepository userRepository, TrackRepository trackRepository, RecommendationService recommendationService, JwtService jwtService) {
         this.userRepository = userRepository;
         this.trackRepository = trackRepository;
         this.recommendationService = recommendationService;
+        this.jwtService = jwtService;
+
+    }
+
+    public String login(UserLogin user){
+        return jwtService.generateToken(user.getUsername());
+
+    }
+
+    public String validateToken(String token) {
+        return jwtService.getUsernameFromToken(token);
     }
 
     public List<UserDto> getUsers() {
         return userRepository.findAll().stream().map(UserDto::new).toList();
     }
 
-
+    @Transactional
     public Track listen(int userId, int trackId){
         User user = userRepository.findById(userId).orElseThrow(
                 () -> new UserNotFoundException(userId)
@@ -48,7 +58,7 @@ public class UserService {
         );
         user.addListeningHistory(track);
         recommendationService.adjustPreferences(user, track, 0.01f);
-        userRepository.save(user);
+        user = userRepository.save(user);
         return recommendationService.recommendTrack(user);
     }
 
