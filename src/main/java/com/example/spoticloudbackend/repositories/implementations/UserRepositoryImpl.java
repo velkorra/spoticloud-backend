@@ -36,17 +36,19 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     @Override
-    public Set<User> findByUsername(String username) {
-        return new HashSet<>(entityManager.createQuery("select u from User u where u.deleted = false and u.username = :username", User.class)
+    public Optional<User> findByUsername(String username) {
+        return entityManager.createQuery("select u from User u where u.deleted = false and u.username = :username", User.class)
                 .setParameter("username", username)
-                .getResultList());
+                .getResultStream()
+                .findFirst();
     }
 
     @Override
     public Optional<User> findByEmail(String email) {
-        return Optional.ofNullable(entityManager.createQuery("select u from User u where u.deleted = false and u.email = :email", User.class)
+        return entityManager.createQuery("select u from User u where u.deleted = false and u.email = :email", User.class)
                 .setParameter("email", email)
-                .getSingleResult());
+                .getResultStream()
+                .findFirst();
     }
 
     @Override

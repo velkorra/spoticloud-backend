@@ -14,7 +14,7 @@ public interface UserRepository {
 
     Set<User> findAll();
 
-    Set<User> findByUsername(String username);
+    Optional<User> findByUsername(String username);
 
     Optional<User> findByEmail(String email);
 

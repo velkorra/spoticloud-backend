@@ -25,9 +25,10 @@ public class PlaylistTokenRepositoryImpl implements PlaylistTokenRepository {
 
     @Override
     public Optional<PlaylistToken> findByToken(String token) {
-        return Optional.ofNullable(entityManager.createQuery("select pt from PlaylistToken pt where pt.token = :token", PlaylistToken.class)
+        return entityManager.createQuery("select pt from PlaylistToken pt where pt.token = :token", PlaylistToken.class)
                 .setParameter("token", token)
-                .getSingleResult());
+                .getResultStream()
+                .findFirst();
     }
 
 
