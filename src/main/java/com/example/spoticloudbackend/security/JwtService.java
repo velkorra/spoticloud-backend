@@ -1,5 +1,8 @@
 package com.example.spoticloudbackend.security;
 
+import com.example.spoticloudbackend.entities.User;
+import io.github.cdimascio.dotenv.Dotenv;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -12,39 +15,59 @@ import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class JwtService {
 
-    private final String skey = "JmooQhYGfzQXEnLqkBpBS3NXUpdPigjOQibAwVja37k=";
-    private final SecretKey key = new SecretKeySpec(skey.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+    private static final String KEY_ENV_VARIABLE = "MY_SECRET_KEY";
+//    private static final Dotenv dotenv = Dotenv.load();
 
+    public static SecretKey getSigningKey() {
+        String encodedKey = System.getenv(KEY_ENV_VARIABLE);
+        if (encodedKey == null || encodedKey.isEmpty()) {
+            throw new IllegalStateException("Signing key not found in environment variables");
+        }
+        byte[] decodedKey = Base64.getDecoder().decode(encodedKey);
+        return new SecretKeySpec(decodedKey, 0, decodedKey.length, "HmacSHA256");
+    }
 
-    public String generateToken(String username) {
+    public String generateToken(User user) {
         return Jwts.builder()
-                .subject(username)
                 .issuedAt(new Date())
                 .expiration(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
-                .signWith(key)
+                .claim("username", user.getUsername())
+                .claim("id", user.getId())
+                .signWith(getSigningKey())
                 .compact();
     }
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
+            Jwts.parser().verifyWith(getSigningKey()).build().parseSignedClaims(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
         }
     }
 
-    public String getUsernameFromToken(String token) {
+    public Claims getJwtPayload(String token) {
         return Jwts.parser()
-                .verifyWith(key)
+                .verifyWith(getSigningKey())
                 .build()
                 .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
+                .getPayload();
+    }
+
+    public String getUsernameFromToken(String token) {
+        return Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload().get("username", String.class);
+
     }
 }

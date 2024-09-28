@@ -65,4 +65,17 @@ public class GlobalExceptionHandler {
         return e.getMessage();
     }
 
+    @ResponseBody
+    @ExceptionHandler(InvalidPasswordException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public String handleInvalidPassword(InvalidPasswordException e) {
+        return e.getMessage();
+    }
+
+    @ResponseBody
+    @ExceptionHandler(UnauthorizedException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public String handleUnauthorized(UnauthorizedException e) {
+        return e.getMessage();
+    }
 }

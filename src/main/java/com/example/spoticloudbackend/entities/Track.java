@@ -154,6 +154,13 @@ public class Track extends BaseEntity {
 
     @Override
     public String toString() {
-        return STR."Track{id=\{id}, name='\{name}\{'\''}, language='\{language}\{'\''}, type='\{type}\{'\''}, duration=\{duration}, explicit=\{explicit}, genre=\{genre}\{'}'}";
-    }
+        return "Track{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", language='" + language + '\'' +
+                ", type='" + type + '\'' +
+                ", duration=" + duration +
+                ", explicit=" + explicit +
+                ", genre=" + genre +
+                '}';    }
 }
