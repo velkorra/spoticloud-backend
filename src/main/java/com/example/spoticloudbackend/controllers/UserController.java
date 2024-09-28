@@ -1,9 +1,12 @@
 package com.example.spoticloudbackend.controllers;
 
+import com.example.spoticloudbackend.exceptions.UnauthorizedException;
 import com.example.spoticloudbackend.schemas.*;
 import com.example.spoticloudbackend.services.PlaylistService;
 import com.example.spoticloudbackend.services.RecommendationService;
 import com.example.spoticloudbackend.services.UserService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,63 +26,71 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public String login(@RequestBody UserLogin user){
+    public LoginResponse login(@RequestBody UserLogin user) {
         return userService.login(user);
     }
 
     @GetMapping("/login")
-    public String login(String token){
-        return userService.validateToken(token);
+    public String login(@AuthenticationPrincipal Jwt jwt) {
+        return jwt.getClaim("username");
     }
 
     @GetMapping
-    public List<UserDto> getUsers(){
+    public List<UserDto> getUsers() {
         return userService.getUsers();
     }
 
     @PostMapping("/listen/{user}/{track}")
-    public TrackDto listen(@PathVariable("user") int user, @PathVariable("track") int track){
+    public TrackDto listen(@PathVariable("user") int user, @PathVariable("track") int track) {
         return new TrackDto(userService.listen(user, track));
     }
 
     @GetMapping("/history/{userId}")
-    public List<HistoryRecordDto> getHistory(@PathVariable("userId") int userId){
+    public List<HistoryRecordDto> getHistory(@PathVariable("userId") int userId) {
         return userService.history(userId);
     }
 
     @GetMapping("/{username}")
-    public Set<UserDto> getUser(@PathVariable String username){
+    public UserDto getUser(@PathVariable String username) {
         return userService.getByUsername(username);
     }
 
     @PostMapping
-    public UserDto createUser(@RequestBody UserCreateDto user){
+    public UserDto createUser(@RequestBody UserCreateDto user) {
         return userService.createUser(user);
     }
 
-    @GetMapping("like/{userId}/{trackId}")
-    public void like(@PathVariable("userId") int userId, @PathVariable("trackId") int trackId){
+    @GetMapping("like/{trackId}")
+    public void like(@PathVariable("trackId") int trackId, @AuthenticationPrincipal Jwt jwt) {
+        if (jwt == null) {
+            throw new UnauthorizedException();
+        }
+        int userId = userService.getById(jwt.getClaim("id")).getId();
         userService.likeTrack(userId, trackId);
     }
 
-    @GetMapping("liked/{userId}")
-    public List<TrackDto> getLikedTracks(@PathVariable("userId") int userId){
-        return userService.getLikedTracks(userId);
+    @GetMapping("liked")
+    public List<TrackDto> getLikedTracks(@AuthenticationPrincipal Jwt jwt) {
+        if (jwt == null) {
+            throw new UnauthorizedException();
+        }
+
+        return userService.getLikedTracks(jwt.getClaim("id"));
     }
 
     @GetMapping("/recommend/{userID}")
-    public TrackDto recommendTrack(@PathVariable int userID){
+    public TrackDto recommendTrack(@PathVariable int userID) {
         return new TrackDto(recommendationService.recommendTrack(userID));
     }
 
     @GetMapping("/recommended-tracks/{userId}")
-    public List<TrackDto> getRecommendedTracks(@PathVariable int userId){
+    public List<TrackDto> getRecommendedTracks(@PathVariable int userId) {
         return recommendationService.recommendTracks(userId)
                 .stream().map(TrackDto::new).toList();
     }
 
     @GetMapping("/recommended-playlist/{userId}")
-    public PlaylistDto getRecommendedPlaylist(@PathVariable int userId){
+    public PlaylistDto getRecommendedPlaylist(@PathVariable int userId) {
         return playlistService.createRecommendedPlaylist(userId);
     }
 
